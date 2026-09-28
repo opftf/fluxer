@@ -4,6 +4,7 @@ import Accessibility from '@app/features/accessibility/state/Accessibility';
 import {isClientBooting} from '@app/features/app/state/ClientReadiness';
 import Authentication from '@app/features/auth/state/Authentication';
 import {initializeDesktopTrayBridge} from '@app/features/platform/utils/DesktopTrayBridge';
+import {startRichPresenceBridge} from '@app/features/platform/utils/RichPresenceBridge';
 import ThemeLibrary from '@app/features/theme/state/ThemeLibrary';
 import * as ModalCommands from '@app/features/ui/commands/ModalCommands';
 import {getElectronAPI} from '@app/features/ui/utils/NativeUtils';
@@ -30,12 +31,14 @@ export function useDesktopElectronBridges(): void {
 			});
 		});
 		const disposeTrayBridge = initializeDesktopTrayBridge();
+		const disposeRichPresence = startRichPresenceBridge();
 		return () => {
 			unsubZoomIn?.();
 			unsubZoomOut?.();
 			unsubZoomReset?.();
 			unsubOpenSettings?.();
 			disposeTrayBridge?.();
+			disposeRichPresence();
 		};
 	}, []);
 }

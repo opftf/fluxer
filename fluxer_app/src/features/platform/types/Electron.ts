@@ -363,6 +363,8 @@ export interface ElectronAPI {
 	showNotification: (options: NotificationOptions) => Promise<NotificationResult>;
 	shouldPlayNotificationSound?: () => Promise<boolean>;
 	getStreamerModeCaptureAppStatus?: () => Promise<StreamerModeCaptureAppStatus>;
+	getRichPresenceActivities?: () => Promise<unknown>;
+	onRichPresenceActivities?: (callback: (activities: unknown) => void) => () => void;
 	closeNotification: (id: string) => void;
 	closeNotifications: (ids: Array<string>) => void;
 	onNotificationClick: (callback: (id: string, url?: string) => void) => () => void;

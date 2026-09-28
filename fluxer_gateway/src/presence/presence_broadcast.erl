@@ -202,12 +202,17 @@ normalize_group_dm_recipients(RecipientsByChannel, UserId, IncludeBot) ->
 build_presence_external(State) ->
     Payload = build_presence_payload(State),
     ExternalStatus = maps:get(<<"status">>, Payload, <<"offline">>),
-    CurrentExternal = #{
+    CurrentExternal0 = #{
         status => ExternalStatus,
         mobile => maps:get(<<"mobile">>, Payload, false),
         afk => maps:get(<<"afk">>, Payload, false),
         custom_status => maps:get(<<"custom_status">>, Payload, null)
     },
+    CurrentExternal =
+        case maps:get(<<"activities">>, Payload, []) of
+            [] -> CurrentExternal0;
+            Activities -> CurrentExternal0#{activities => Activities}
+        end,
     {Payload, CurrentExternal, ExternalStatus}.
 
 -spec publish_presence_payload(state(), map(), map(), binary()) -> state().
@@ -223,6 +228,19 @@ update_cache_for_status(UserId, <<"offline">>, _Payload) ->
 update_cache_for_status(UserId, _Status, Payload) ->
     presence_cache:put(UserId, Payload).
 
+-spec flatten_activities(term()) -> [map()].
+flatten_activities(Map) when is_map(Map) ->
+    lists:sublist(append_activity_lists(maps:values(Map)), 8);
+flatten_activities(_) ->
+    [].
+
+-spec append_activity_lists([term()]) -> [map()].
+append_activity_lists(Lists) ->
+    lists:append([
+        [Activity || Activity <- List, is_map(Activity)]
+     || List <- Lists, is_list(List)
+    ]).
+
 -spec presence_changed(map() | undefined, map()) -> boolean().
 presence_changed(undefined, _Current) -> true;
 presence_changed(Last, Current) -> Last =/= Current.
@@ -235,7 +253,8 @@ build_presence_payload(State) ->
     Afk = presence_status:get_flattened_afk(Sessions),
     UserData = maps:get(user_data, State, #{}),
     CustomStatus = maps:get(custom_status, State, null),
-    presence_payload:build(UserData, Status, Mobile, Afk, CustomStatus).
+    Activities = flatten_activities(maps:get(activities, State, #{})),
+    presence_payload:build(UserData, Status, Mobile, Afk, CustomStatus, Activities).
 
 -spec dispatch_foreign_presence(user_id(), map(), state()) -> {noreply, state()}.
 dispatch_foreign_presence(TargetId, Payload, State) ->

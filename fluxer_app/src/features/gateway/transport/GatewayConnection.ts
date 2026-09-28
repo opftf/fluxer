@@ -161,7 +161,13 @@ class GatewayConnection {
 					if (!presence) {
 						return;
 					}
-					this.socket?.updatePresence(presence.status, presence.afk, presence.mobile, presence.custom_status);
+					this.socket?.updatePresence(
+						presence.status,
+						presence.afk,
+						presence.mobile,
+						presence.custom_status,
+						presence.activities,
+					);
 				},
 			);
 		});
@@ -284,6 +290,7 @@ class GatewayConnection {
 					afk: presence.afk,
 					mobile: presence.mobile,
 					custom_status: presence.custom_status,
+					...(presence.activities !== undefined && {activities: presence.activities}),
 				},
 			}),
 			compression,

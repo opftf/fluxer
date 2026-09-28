@@ -379,6 +379,8 @@ export interface ElectronAPI {
 	desktopTroubleshootingReload?(): Promise<void>;
 	desktopTroubleshootingResetAppData?(options?: {confirm?: boolean}): Promise<void>;
 	getStreamerModeCaptureAppStatus?(): Promise<StreamerModeCaptureAppStatus>;
+	getRichPresenceActivities?(): Promise<unknown>;
+	onRichPresenceActivities?(callback: (activities: unknown) => void): () => void;
 	popupHelpMenu?(): Promise<void>;
 	getInitialDeepLink(): Promise<string | null>;
 	onDeepLink(callback: (url: string) => void): () => void;

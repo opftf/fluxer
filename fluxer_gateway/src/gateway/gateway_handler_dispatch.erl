@@ -230,7 +230,7 @@ parse_presence_status(StatusRaw, Data) ->
         Afk = presence_boolean(<<"afk">>, Data),
         Mobile = presence_boolean(<<"mobile">>, Data),
         Base = #{status => AdjustedStatus, afk => Afk, mobile => Mobile},
-        Result = maybe_add_custom_status(Base, Data),
+        Result = maybe_add_activities(maybe_add_custom_status(Base, Data), Data),
         {ok, Result}
     catch
         error:function_clause -> {error, invalid_presence}
@@ -247,6 +247,13 @@ presence_boolean(Key, Data) ->
 maybe_add_custom_status(Base, Data) ->
     case maps:find(<<"custom_status">>, Data) of
         {ok, CS} -> Base#{<<"custom_status">> => CS};
+        error -> Base
+    end.
+
+-spec maybe_add_activities(map(), map()) -> map().
+maybe_add_activities(Base, Data) ->
+    case maps:find(<<"activities">>, Data) of
+        {ok, Raw} -> Base#{<<"activities">> => presence_payload:normalize_activities(Raw)};
         error -> Base
     end.
 

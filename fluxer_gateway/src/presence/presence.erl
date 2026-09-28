@@ -38,7 +38,8 @@
     subscriptions := map(),
     is_bot := boolean(),
     initial_presences_sent := boolean(),
-    last_published_presence := map() | undefined
+    last_published_presence := map() | undefined,
+    activities => map()
 }.
 -type presence_data() :: #{
     user_id := user_id(),
@@ -88,8 +89,9 @@ handle_call({session_connect, Request}, {Pid, _}, State) when is_map(Request), i
     {reply, Reply, NewState} = presence_session:handle_session_connect(
         Request, SessionPid, State
     ),
+    StateWithActivities = apply_activities(Request, NewState),
     FinalState = presence_broadcast:publish_global_presence(
-        maps:get(sessions, NewState), NewState
+        maps:get(sessions, StateWithActivities), StateWithActivities
     ),
     presence_broadcast:send_cached_presences_to_session(SessionPid, FinalState),
     {reply, Reply, FinalState};
@@ -227,8 +229,9 @@ handle_presence_update_cast(Request, State) ->
     {noreply, NewState} = presence_session:handle_presence_update(
         UpdatedRequest, StateWithCustomStatus
     ),
+    StateWithActivities = apply_activities(UpdatedRequest, NewState),
     FinalState = presence_broadcast:publish_global_presence(
-        maps:get(sessions, NewState), NewState
+        maps:get(sessions, StateWithActivities), StateWithActivities
     ),
     {noreply, FinalState}.
 
@@ -283,6 +286,50 @@ user_ids(Items) ->
 -spec map_list([term()]) -> [map()].
 map_list(Items) ->
     [Item || Item <- Items, is_map(Item)].
+
+-spec apply_activities(map(), map()) -> map().
+apply_activities(Request, State) ->
+    case maps:find(<<"activities">>, Request) of
+        error ->
+            State;
+        {ok, Raw} ->
+            case activity_session_id(Request) of
+                undefined ->
+                    State;
+                SessionId ->
+                    Sessions = maps:get(sessions, State, #{}),
+                    case maps:is_key(SessionId, Sessions) of
+                        false -> State;
+                        true -> set_session_activities(SessionId, Raw, State)
+                    end
+            end
+    end.
+
+-spec set_session_activities(binary(), term(), map()) -> map().
+set_session_activities(SessionId, Raw, State) ->
+    Current = activity_map(State),
+    Normalized = presence_payload:normalize_activities(Raw),
+    State#{activities => Current#{SessionId => Normalized}}.
+
+-spec activity_map(map()) -> map().
+activity_map(State) ->
+    case maps:get(activities, State, #{}) of
+        Map when is_map(Map) -> Map;
+        _ -> #{}
+    end.
+
+-spec activity_session_id(map()) -> binary() | undefined.
+activity_session_id(Request) ->
+    case maps:get(session_id, Request, undefined) of
+        Bin when is_binary(Bin), Bin =/= <<>> -> Bin;
+        _ -> binary_session_id(maps:get(<<"session_id">>, Request, undefined))
+    end.
+
+-spec binary_session_id(term()) -> binary() | undefined.
+binary_session_id(Bin) when is_binary(Bin), Bin =/= <<>> ->
+    Bin;
+binary_session_id(_) ->
+    undefined.
 
 -spec normalize_start_link(gen_server:start_ret()) -> {ok, pid()} | {error, term()}.
 normalize_start_link({ok, Pid}) ->

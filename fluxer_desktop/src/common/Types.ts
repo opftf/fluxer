@@ -632,6 +632,17 @@ export interface DomainMigrationApi {
 	setAppOrigin: (origin: string) => Promise<void>;
 }
 
+export interface RichPresenceActivity {
+	name: string;
+	type: number;
+	details?: string;
+	state?: string;
+	timestamps?: {
+		start?: number;
+		end?: number;
+	};
+}
+
 export interface ElectronAPI {
 	platform: NodeJS.Platform;
 	buildChannel: 'stable' | 'canary';
@@ -698,6 +709,8 @@ export interface ElectronAPI {
 	showNotification: (options: NotificationOptions) => Promise<NotificationResult>;
 	shouldPlayNotificationSound: () => Promise<boolean>;
 	getStreamerModeCaptureAppStatus: () => Promise<StreamerModeCaptureAppStatus>;
+	getRichPresenceActivities: () => Promise<Array<RichPresenceActivity>>;
+	onRichPresenceActivities: (callback: (activities: Array<RichPresenceActivity>) => void) => () => void;
 	closeNotification: (id: string) => void;
 	closeNotifications: (ids: Array<string>) => void;
 	onNotificationClick: (callback: (id: string, url?: string) => void) => () => void;

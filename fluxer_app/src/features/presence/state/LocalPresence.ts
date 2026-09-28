@@ -2,8 +2,10 @@
 
 import type {AccountPresenceIntent} from '@app/features/auth/state/AccountStorage';
 import {deferUntilModulesLoaded} from '@app/features/platform/utils/DeferUntilModulesLoaded';
+import {type Activity, activitiesKey, normalizeActivities} from '@app/features/presence/state/Activity';
 import Idle from '@app/features/ui/state/Idle';
 import MobileLayout from '@app/features/ui/state/MobileLayout';
+import {isDesktop} from '@app/features/ui/utils/NativeUtils';
 import type {CustomStatus, GatewayCustomStatusPayload} from '@app/features/user/state/CustomStatus';
 import {customStatusToKey, normalizeCustomStatus, toGatewayCustomStatus} from '@app/features/user/state/CustomStatus';
 import type {StatusType} from '@fluxer/constants/src/StatusConstants';
@@ -16,6 +18,7 @@ type Presence = Readonly<{
 	afk: boolean;
 	mobile: boolean;
 	custom_status: GatewayCustomStatusPayload | null;
+	activities?: ReadonlyArray<Activity>;
 }>;
 
 export const ACCOUNT_PRESENCE_INTENT_MAX_AGE_MS = 60 * 1000;
@@ -42,6 +45,7 @@ class LocalPresence {
 	afk: boolean = false;
 	mobile: boolean = false;
 	customStatus: CustomStatus | null = null;
+	activities: Array<Activity> = [];
 	private restoredIntent: AccountPresenceIntent | null = null;
 
 	constructor() {
@@ -96,11 +100,19 @@ class LocalPresence {
 		};
 	}
 
+	setActivities(next: ReadonlyArray<Activity>): void {
+		const normalized = normalizeActivities(next);
+		if (activitiesKey(normalized) === activitiesKey(this.activities)) return;
+		this.activities = normalized;
+	}
+
 	getGatewayPresence(): Presence | null {
 		if (!userSettings?.isHydrated() && !this.restoredIntent) {
 			return null;
 		}
-		return this.getPresence();
+		const presence = this.getPresence();
+		if (!isDesktop()) return presence;
+		return {...presence, activities: this.activities};
 	}
 
 	handleSessionChanging(options: {clearRestoredIntent?: boolean} = {}): void {
@@ -135,7 +147,9 @@ class LocalPresence {
 		const hydrated = userSettings?.isHydrated() ? '1' : '0';
 		const afk = this.afk ? '1' : '0';
 		const mobile = this.mobile ? '1' : '0';
-		return `hydrated:${hydrated}|${this.status}|${customStatusToKey(this.customStatus)}|afk:${afk}|mobile:${mobile}`;
+		const act = activitiesKey(this.activities);
+		const statusKey = customStatusToKey(this.customStatus);
+		return `hydrated:${hydrated}|${this.status}|${statusKey}|afk:${afk}|mobile:${mobile}|act:${act}`;
 	}
 
 	private computeAfk(idleSince: number, isMobile: boolean, settings: LocalPresenceUserSettings | null): boolean {

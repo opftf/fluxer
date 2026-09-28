@@ -124,6 +124,15 @@ publish_offline_on_terminate(UserId, State) ->
             ok
     end.
 
+-spec prune_activities(map(), map()) -> map().
+prune_activities(State, Sessions) ->
+    case maps:find(activities, State) of
+        {ok, Map} when is_map(Map) ->
+            State#{activities => maps:with(maps:keys(Sessions), Map)};
+        _ ->
+            State
+    end.
+
 -spec collect_session_pids(state()) -> [pid()].
 collect_session_pids(State) ->
     Sessions = maps:get(sessions, State, #{}),
@@ -134,7 +143,7 @@ collect_session_pids(State) ->
 terminate_sessions_by_auth_hashes(SessionIdHashes, State) ->
     Sessions = maps:get(sessions, State),
     {NewSessions, Removed, Errors} = fold_terminate_sessions(SessionIdHashes, Sessions),
-    NewState0 = State#{sessions := NewSessions},
+    NewState0 = prune_activities(State#{sessions := NewSessions}, NewSessions),
     NewState = maybe_publish_after_removal(Removed, NewSessions, NewState0),
     finalize_session_termination(Errors, Removed, NewSessions, NewState).
 
@@ -224,7 +233,7 @@ terminate_session_process(Pid, SessionIdHashes) when is_pid(Pid) ->
     {noreply, state()} | {stop, normal, state()}.
 process_session_removal(SessionId, Sessions, State) ->
     NewSessions = maps:remove(SessionId, Sessions),
-    NewState0 = State#{sessions := NewSessions},
+    NewState0 = prune_activities(State#{sessions := NewSessions}, NewSessions),
     NewState = presence_broadcast:publish_global_presence(NewSessions, NewState0),
     case map_size(NewSessions) of
         0 ->

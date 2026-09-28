@@ -505,9 +505,10 @@ handle_presence_update_cast(Update, State) ->
     NewStatus = maps:get(status, Update, Status),
     NewAfk = maps:get(afk, Update, Afk),
     NewMobile = maps:get(mobile, Update, Mobile),
-    NewState = maybe_update_resume_status(
+    NewState0 = maybe_update_resume_status(
         NewStatus, State#{status => NewStatus, afk => NewAfk, mobile => NewMobile}
     ),
+    NewState = store_activities(Update, NewState0),
     send_presence_update(State, SessionId, NewStatus, NewAfk, NewMobile, Update),
     {noreply, NewState}.
 
@@ -527,13 +528,25 @@ send_presence_update(#{presence_pid := Pid}, SessionId, NewStatus, NewAfk, NewMo
     BaseMsg = #{
         session_id => SessionId, status => NewStatus, afk => NewAfk, mobile => NewMobile
     },
-    Msg =
+    Msg0 =
         case maps:find(<<"custom_status">>, Update) of
             {ok, CS} -> BaseMsg#{<<"custom_status">> => CS};
             error -> BaseMsg
         end,
+    Msg =
+        case maps:find(<<"activities">>, Update) of
+            {ok, Activities} -> Msg0#{<<"activities">> => Activities};
+            error -> Msg0
+        end,
     gen_server:cast(Pid, {presence_update, Msg}),
     ok.
+
+-spec store_activities(map(), session_state()) -> session_state().
+store_activities(Update, State) ->
+    case maps:find(<<"activities">>, Update) of
+        {ok, Activities} when is_list(Activities) -> State#{activities => Activities};
+        _ -> State
+    end.
 
 -spec handle_initial_global_presences([map()], session_state()) -> {noreply, session_state()}.
 handle_initial_global_presences(Presences, State) ->
@@ -588,6 +601,7 @@ serialize_transfer_identity(State) ->
         user_id => maps:get(user_id, State),
         user_data => maps:get(user_data, State),
         custom_status => maps:get(custom_status, State, null),
+        activities => maps:get(activities, State, []),
         version => maps:get(version, State),
         token_hash => maps:get(token_hash, State),
         auth_session_id_hash => maps:get(auth_session_id_hash, State),

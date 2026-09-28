@@ -43,6 +43,7 @@ import type {
 	NativeScreenCaptureStartResult,
 	NotificationOptions,
 	NotificationResult,
+	RichPresenceActivity,
 	SetDesktopTroubleshootingDisableHardwareAccelerationOptions,
 	SpellcheckBundledDictionary,
 	SpellcheckResolvedEngineInfo,
@@ -493,6 +494,17 @@ const api: ElectronAPI = {
 	shouldPlayNotificationSound: (): Promise<boolean> => ipcRenderer.invoke('notification-sound-allowed'),
 	getStreamerModeCaptureAppStatus: (): Promise<StreamerModeCaptureAppStatus> =>
 		ipcRenderer.invoke('streamer-mode:get-capture-app-status'),
+	getRichPresenceActivities: (): Promise<Array<RichPresenceActivity>> =>
+		ipcRenderer.invoke('rich-presence:get-activities'),
+	onRichPresenceActivities: (callback: (activities: Array<RichPresenceActivity>) => void): (() => void) => {
+		const handler = (_event: Electron.IpcRendererEvent, activities: Array<RichPresenceActivity>): void => {
+			callback(Array.isArray(activities) ? activities : []);
+		};
+		ipcRenderer.on('rich-presence:activities', handler);
+		return () => {
+			ipcRenderer.removeListener('rich-presence:activities', handler);
+		};
+	},
 	closeNotification: (id: string): void => {
 		ipcRenderer.send('close-notification', id);
 	},

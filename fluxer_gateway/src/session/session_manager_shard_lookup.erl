@@ -14,6 +14,7 @@
     parse_presence/2,
     parse_guild_ids/1,
     get_presence_custom_status/1,
+    get_presence_activities/1,
     normalize_status/1,
     select_initial_status/2,
     normalize_coordinate/1,
@@ -306,6 +307,15 @@ get_presence_custom_status(Map) when is_map(Map) ->
     end;
 get_presence_custom_status(_) ->
     null.
+
+-spec get_presence_activities(term()) -> [term()].
+get_presence_activities(Map) when is_map(Map) ->
+    case map_utils:get_safe(Map, <<"activities">>, []) of
+        List when is_list(List) -> List;
+        _ -> []
+    end;
+get_presence_activities(_) ->
+    [].
 
 -spec get_stored_status(map()) -> binary().
 get_stored_status(Data) ->

@@ -12,6 +12,7 @@ import {
 	UserProfileRoles,
 	UserProfileTimezoneInfo,
 } from '@app/features/user/components/popouts/UserProfileShared';
+import {ActivitySection} from '@app/features/user/components/profile/ActivitySection';
 import {VoiceActivitySection} from '@app/features/user/components/profile/VoiceActivitySection';
 import {resolveProfileGuildMembership} from '@app/features/user/utils/ProfileGuildMembership';
 import {Permissions} from '@fluxer/constants/src/ChannelConstants';
@@ -32,6 +33,10 @@ export const ProfileContent: React.FC<ProfileContentProps> = observer(
 					className={userProfileModalStyles.profileContentHeader}
 					data-flx="user.user-profile-modal.profile-content.div--2"
 				>
+					<ActivitySection
+						userId={user.id}
+						data-flx="user.user-profile-modal.profile-content.activity-section"
+					/>
 					<VoiceActivitySection
 						userId={user.id}
 						onNavigate={handleNavigate}
