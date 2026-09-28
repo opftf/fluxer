@@ -59,6 +59,7 @@ import {
 	UserProfileRoles,
 	UserProfileTimezoneInfo,
 } from '@app/features/user/components/popouts/UserProfileShared';
+import {ActivitySection} from '@app/features/user/components/profile/ActivitySection';
 import {useAutoplayExpandedProfileAnimations} from '@app/features/user/hooks/useAutoplayExpandedProfileAnimations';
 import type {Profile} from '@app/features/user/models/Profile';
 import {User} from '@app/features/user/models/User';
@@ -658,6 +659,10 @@ const UserProfileMobileSheetContent: React.FC<UserProfileMobileSheetContentProps
 														data-flx="user.user-profile-mobile-sheet.user-profile-mobile-sheet-content.custom-status-text"
 													/>
 												</div>
+												<ActivitySection
+													userId={user.id}
+													data-flx="user.user-profile-mobile-sheet.user-profile-mobile-sheet-content.activity-section"
+												/>
 											</div>
 											{isCurrentUser ? (
 												!currentUserUnclaimed && (

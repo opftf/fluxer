@@ -52,6 +52,7 @@ import {registerDisplayMediaHandlers} from '@electron/main/DisplayMedia';
 import {initializeDockMenu} from '@electron/main/DockMenu';
 import {cleanupGlobalKeyHook, registerGlobalKeyHookHandlers} from '@electron/main/GlobalKeyHook';
 import {cleanupIpcHandlers, registerIpcHandlers} from '@electron/main/IpcHandlers';
+import {startRichPresence, stopRichPresence} from '@electron/main/RichPresence';
 import {initializeJumpList} from '@electron/main/JumpList';
 import {describeLaunchDiagnosticOptions, shouldStartHiddenAtLogin} from '@electron/main/LaunchOptions';
 import {cleanupVirtmic, registerVirtmicHandlers} from '@electron/main/LinuxAudioCapture';
@@ -336,6 +337,11 @@ if (launchConfigurationError) {
 					log.error('[Init] Failed to register IPC handlers:', error);
 				}
 				try {
+					runStartupPhase('rich-presence', startRichPresence);
+				} catch (error) {
+					log.error('[Init] Failed to start rich presence:', error);
+				}
+				try {
 					runStartupPhase('autostart-handlers', registerAutostartHandlers);
 				} catch (error) {
 					log.error('[Init] Failed to register autostart handlers:', error);
@@ -455,6 +461,7 @@ if (launchConfigurationError) {
 			log.info('[Shutdown] will-quit cleanup started');
 			armQuitWatchdog('will-quit');
 			event.preventDefault();
+			stopRichPresence();
 			cleanupIpcHandlers({quitting: true});
 			cleanupGlobalKeyHook();
 			cleanupNativeAudio();

@@ -180,6 +180,9 @@ build_session_data(Data, IdentifyData, Version, SocketPid, SessionId, UserDataMa
         version => Version,
         user_data => term_detach:detach(build_user_data(UserDataMap)),
         custom_status => DetachedCustomStatus,
+        activities => presence_payload:normalize_activities(
+            session_manager_shard_lookup:get_presence_activities(Presence)
+        ),
         token_hash => utils:hash_token(maps:get(token, IdentifyData)),
         auth_session_id_hash => extract_auth_session_id_hash(Data),
         properties => term_detach:detach(Properties),

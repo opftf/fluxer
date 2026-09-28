@@ -113,7 +113,8 @@ try_session_connect(
         status => Status,
         afk => Afk,
         mobile => Mobile,
-        socket_pid => SocketPid
+        socket_pid => SocketPid,
+        <<"activities">> => maps:get(activities, State, [])
     },
     ConnectStartedAt = gateway_timings:start(),
     Result = safe_call(fun() ->

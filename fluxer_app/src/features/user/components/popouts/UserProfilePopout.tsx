@@ -44,6 +44,7 @@ import {
 	UserProfileRoles,
 	UserProfileTimezoneInfo,
 } from '@app/features/user/components/popouts/UserProfileShared';
+import {ActivitySection} from '@app/features/user/components/profile/ActivitySection';
 import {ProfileCardActions} from '@app/features/user/components/profile/profile_card/ProfileCardActions';
 import {ProfileCardBanner} from '@app/features/user/components/profile/profile_card/ProfileCardBanner';
 import {ProfileCardContent} from '@app/features/user/components/profile/profile_card/ProfileCardContent';
@@ -347,6 +348,9 @@ export const UserProfilePopout: React.FC<UserProfilePopoutProps> = observer(
 										data-flx="user.user-profile-popout.profile-custom-status-text"
 									/>
 								</div>
+							)}
+							{!isWebhook && (
+								<ActivitySection userId={user.id} data-flx="user.user-profile-popout.activity-section" />
 							)}
 							{!isWebhook && (
 								<VoiceActivitySection

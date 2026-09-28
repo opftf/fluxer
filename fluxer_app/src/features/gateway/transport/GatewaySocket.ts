@@ -29,6 +29,7 @@ import AppStorage, {
 } from '@app/features/platform/state/PersistentStorage';
 import {Logger, LogLevel} from '@app/features/platform/utils/AppLogger';
 import {ExponentialBackoff} from '@app/features/platform/utils/RetryScheduler';
+import type {Activity} from '@app/features/presence/state/Activity';
 import LayerManager from '@app/features/ui/state/LayerManager';
 import MobileLayout from '@app/features/ui/state/MobileLayout';
 import type {GatewayCustomStatusPayload} from '@app/features/user/state/CustomStatus';
@@ -86,6 +87,7 @@ export interface GatewayPresence {
 	afk: boolean;
 	mobile: boolean;
 	custom_status?: GatewayCustomStatusPayload | null;
+	activities?: ReadonlyArray<Activity>;
 }
 
 export interface GatewayVoiceStateUpdateParams {
@@ -488,6 +490,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 		afk?: boolean,
 		mobile?: boolean,
 		customStatus?: GatewayCustomStatusPayload | null,
+		activities?: ReadonlyArray<Activity>,
 	): void {
 		if (!this.isConnected()) return;
 		this.sendPayload({
@@ -497,6 +500,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 				...(afk !== undefined && {afk}),
 				...(mobile !== undefined && {mobile}),
 				...(customStatus !== undefined && {custom_status: customStatus}),
+				...(activities !== undefined && {activities}),
 			},
 		});
 	}
